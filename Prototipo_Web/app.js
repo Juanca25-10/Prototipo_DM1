@@ -43,7 +43,9 @@ const IC = {
   lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
   upload:'<path d="M7 17a5 5 0 1 1 1-9.9A6 6 0 0 1 19 9a4 4 0 0 1 0 8M12 20v-9M8 14l4-4 4 4"/>',
-  close:'<path d="M5 5l14 14M19 5L5 19"/>'
+  close:'<path d="M5 5l14 14M19 5L5 19"/>',
+  cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/>',
+  left:'<path d="M15 5l-7 7 7 7"/>', right:'<path d="M9 5l7 7-7 7"/>'
 };
 const ic = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
 
@@ -153,8 +155,8 @@ function view(html) {
   window.scrollTo(0, 0);
   const h = $('#app h1'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({preventScroll:true}); }
 }
-function cabecera() {
-  return `<header class="top"><div>${asset(A.logo, 'Logo Bibliolab Activa', 'logo-main')}</div>
+function cabecera(n) {
+  return `<header class="top"><div>${asset(A.logo, 'Logo Bibliolab Activa', 'logo-main')}</div>${n ? steps(n) : ''}
   <div class="logos">${asset(A.craib, 'Logo CRAIB', 'logo-sm')}${asset(A.ie, 'Logo Institución Educativa Boyacá', 'logo-sm')}</div></header>`;
 }
 function steps(n) {
@@ -166,9 +168,9 @@ function steps(n) {
 }
 
 /* ---------- Modales ---------- */
-let lastFocus = null, modalKey = null;
-function openModal(html, cls = '') {
-  closeModal(true); lastFocus = document.activeElement;
+let lastFocus = null, modalKey = null, modalClose = null;
+function openModal(html, cls = '', onClose = null) {
+  closeModal(true); modalClose = onClose; lastFocus = document.activeElement;
   const r = $('#modal-root');
   r.innerHTML = `<div class="overlay"><div class="modal ${cls}" role="dialog" aria-modal="true" aria-labelledby="m-title" tabindex="-1">${html}</div></div>`;
   const m = $('.modal', r);
@@ -187,9 +189,11 @@ function openModal(html, cls = '') {
   return m;
 }
 function closeModal(silent) {
+  const cb = modalClose; modalClose = null;
   $('#modal-root').innerHTML = '';
   if (modalKey) document.removeEventListener('keydown', modalKey); modalKey = null;
   if (!silent && lastFocus && document.contains(lastFocus)) lastFocus.focus();
+  if (!silent && cb) cb();
 }
 const xBtn = `<button class="x" data-close aria-label="Cerrar ventana">${ic('close')}</button>`;
 function confirmModal({title, text, ok, cancel = 'Volver', cls = 'pink', onOk}) {
@@ -221,29 +225,32 @@ function abrirCondiciones() {
 }
 
 /* ================= P1 · Inicio ================= */
-function p1() {
-  view(`${cabecera()}<main class="page home">
+const LOGO_W = 'assets/img/logo-bibliolab-activa-blanco.png';
+const HOME_DECO = `<div class="home-deco" aria-hidden="true">
+  <svg style="left:0;top:0" width="150" height="90" viewBox="0 0 150 90"><ellipse cx="0" cy="22" rx="95" ry="68" fill="#f2b81c" stroke="#fff3cf" stroke-width="4"/></svg>
+  <svg style="right:0;top:0" width="640" height="360" viewBox="0 0 640 360">
+    <circle cx="450" cy="30" r="195" fill="none" stroke="#1f4fa3" stroke-width="4" stroke-dasharray="14 12"/>
+    <g stroke="#fff3cf" stroke-width="4"><ellipse cx="225" cy="8" rx="150" ry="62" fill="#e6197a"/><ellipse cx="370" cy="-6" rx="125" ry="62" fill="#f2b81c"/><ellipse cx="545" cy="65" rx="130" ry="112" fill="#1fb5d6"/><ellipse cx="640" cy="250" rx="80" ry="100" fill="#1f4fa3"/></g></svg>
+  <svg style="right:0;top:330px" width="150" height="280" viewBox="0 0 150 280"><circle cx="120" cy="140" r="130" fill="none" stroke="#1f4fa3" stroke-width="4" stroke-dasharray="14 12"/></svg></div>`;
+function homeHTML() {
+  return `<main class="page home">${HOME_DECO}<div class="home-in">
     <div class="vert" aria-hidden="true"><span class="v1">Explora</span><span class="v2">Conecta</span><span class="v3">Crea</span><span class="v4">Colabora</span></div>
-    <div>
-      <div class="hero">
-        <div>${asset(A.docente, 'Personaje docente (ilustración)', 'char')}</div>
-        <div>
-          <div>${asset(A.logo, 'Logo Bibliolab Activa', 'logo-hero')}</div>
-          <h1>Transforma tus objetivos pedagógicos en experiencias.</h1>
-          <p class="lead">Selecciona una opción para comenzar o gestionar tu actividad.</p>
-          <form class="code-form" id="f-code" novalidate>
-            <div class="field"><label for="codigo">Código de la actividad</label>
-              <input id="codigo" type="text" autocomplete="off" maxlength="12" placeholder="Introduce el código de actividad" aria-describedby="codigo-msg" ${S.lock ? 'disabled' : ''}></div>
-            <button class="btn btn-primary" ${S.lock ? 'disabled' : ''}>Cargar / Editar</button>
-          </form>
-          <p id="codigo-msg" class="err" role="alert">${S.lock ? lockMsg() : ''}</p>
-          <p class="note">Aquí no hay cuentas ni inicio de sesión: el código de cada actividad es tu único acceso.</p>
-        </div>
-      </div>
-      <a class="cta-bar" href="#/p2">Crear una actividad +</a>
-    </div></main>`);
-  $('#f-code').addEventListener('submit', consultar);
+    <div class="home-char">${asset(A.docente, 'Personaje docente (ilustración)', 'char-big')}</div>
+    <section class="home-text">
+      <div>${asset(A.logo, 'Logo Bibliolab Activa', 'logo-hero')}</div>
+      <h1>Transforma tus objetivos pedagógicos en experiencias.</h1>
+      <p class="lead">Selecciona una opción para comenzar o gestionar tu actividad.</p>
+      <form class="code-form" id="f-code" novalidate>
+        <div class="field"><label class="sr-only" for="codigo">Código de la actividad</label>
+          <input id="codigo" type="text" autocomplete="off" maxlength="12" placeholder="Introduce el código de actividad" aria-describedby="codigo-msg" ${S.lock ? 'disabled' : ''}></div>
+        <button class="btn btn-primary" ${S.lock ? 'disabled' : ''}>Cargar / Editar</button>
+      </form>
+      <p id="codigo-msg" class="err" role="alert">${S.lock ? lockMsg() : ''}</p>
+    </section>
+    <div class="home-logos">${asset(A.craib, 'Logo CRAIB', 'logo-sm')}${asset(A.ie, 'Logo Institución Educativa Boyacá', 'logo-sm')}</div>
+    <a class="cta-bar" href="#/p2">Crear una actividad +</a></div></main>`;
 }
+function p1() { view(homeHTML()); $('#f-code').addEventListener('submit', consultar); }
 const lockMsg = () => 'Hiciste varios intentos con códigos inválidos. Espera un momento antes de volver a intentar. (Número de intentos y tiempo de espera: [por definir])';
 function consultar(e) {
   e.preventDefault();
@@ -262,51 +269,54 @@ function consultar(e) {
   S.current = a; S.justCreated = false; location.hash = '#/p7';
 }
 
-/* ================= P2 · Qué es "Crear una actividad" ================= */
+/* ================= P2 · Qué es "Crear una actividad" (ventana sobre el inicio) ================= */
 function p2() {
-  view(`${cabecera()}<main class="page"><section class="panel">
-    <h1>Crear una actividad +</h1><p style="font-size:20px">Así funciona, en tres pasos:</p>
-    <div class="what">
-      <div class="st"><div class="num" aria-hidden="true">1</div><h2>Define tu objetivo</h2><p>Cuéntanos la asignatura, el grado, tu objetivo de aprendizaje y el enfoque principal.</p></div>
-      <div class="st"><div class="num" aria-hidden="true">2</div><h2>Revisa la propuesta</h2><p>Te mostramos un borrador del catálogo de plantillas. Puedes ajustarlo antes de confirmar.</p></div>
-      <div class="st"><div class="num" aria-hidden="true">3</div><h2>Genera la ficha y tu código</h2><p>Guarda el código de la actividad: lo digitarás en el computador de la biblioteca.</p></div>
-    </div>
-    <div class="row"><button class="btn btn-light" id="empezar">Empezar</button><a class="btn btn-ghost" style="color:#fff;border-color:#fff" href="#/p1">Volver al inicio</a></div>
-  </section></main>`);
-  $('#empezar').onclick = () => { S.form = {asignatura:'', grado:'', objetivo:'', enfoque:''}; S.draft = null; location.hash = '#/p3'; };
+  view(homeHTML()); $('#app').inert = true;
+  const m = openModal(`${xBtn}<h2 id="m-title">Crear una actividad +</h2><p class="m-sub">¿Qué es una actividad de Bibliolab Activa?</p>
+    <p class="c1">Bibliolab Activa permite diseñar actividades pedagógicas que integran los recursos de la biblioteca CRAIB, adaptadas a los objetivos de clase. Así funciona, en tres pasos:</p>
+    <ol class="what3">
+      <li><span class="num" aria-hidden="true">1</span><h3>Define tu objetivo</h3>${asset('assets/img/captura-formulario.png', 'Captura del formulario de creación', 'shot')}<p class="cap">Completa asignatura, grado, objetivo y enfoque.</p></li>
+      <li><span class="num" aria-hidden="true">2</span><h3>Revisa la propuesta</h3>${asset('assets/img/captura-propuesta.png', 'Captura de la propuesta (borrador)', 'shot')}<p class="cap">Es un borrador del catálogo: puedes ajustarlo antes de confirmar.</p></li>
+      <li><span class="num" aria-hidden="true">3</span><h3>Genera tu código</h3>${asset('assets/img/captura-ficha.png', 'Captura de la ficha de la actividad', 'shot')}<p class="cap">Guarda el <em>código de la actividad</em> y aplícala con tus estudiantes.</p></li>
+    </ol>
+    <div class="row c" style="flex-direction:row"><button class="btn btn-light" id="empezar">Empezar</button><button class="btn btn-ghost" data-close>Volver al inicio</button></div>`, 'xl', () => { location.hash = '#/p1'; });
+  m.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeModal(); });
+  $('#empezar', m).onclick = () => { S.form = {asignatura:'', grado:'', objetivo:'', enfoque:''}; S.draft = null; closeModal(true); location.hash = '#/p3'; };
 }
 
 /* ================= P3 · Formulario ================= */
-function p3() {
+function formHTML() {
   const f = S.form;
-  view(`${cabecera()}<main class="page" style="max-width:1100px">${steps(1)}
+  return `${cabecera(1)}<main class="page form-page"><div class="grid-paper" aria-hidden="true"></div>
+    <div class="side-char" style="right:24px;bottom:-24px">${asset(A.estudiante, 'Personaje estudiante (ilustración)', 'char-r')}</div>
+    <div class="form-in">
     <h1>Creación de experiencia pedagógica</h1>
-    <p class="lead" style="font-weight:500">Ingresa la información básica para vincular los objetivos del aula con los recursos de la Bibliolab.</p>
+    <div class="pill-row"><p class="pill-d">Ingresa la información básica para vincular los objetivos del aula con los recursos de la Bibliolab.</p><span class="book-box" aria-hidden="true">${ic('book')}</span></div>
     <form id="f-crear" novalidate>
-      <div class="two">
-        <div class="field"><label for="asig">Asignatura <span class="req" aria-hidden="true">*</span></label>
-          <select id="asig" required aria-describedby="e-asig"><option value="">Seleccione una…</option>${ASIGNATURAS.map(a => `<option ${f.asignatura === a ? 'selected' : ''}>${a}</option>`).join('')}</select>
-          <p class="err" id="e-asig"></p></div>
-        <div class="field"><label for="grado">Grado <span class="req" aria-hidden="true">*</span></label>
-          <select id="grado" required aria-describedby="e-grado"><option value="">Seleccione uno…</option>${GRADOS.map(a => `<option ${f.grado === a ? 'selected' : ''}>${a}</option>`).join('')}</select>
-          <p class="err" id="e-grado"></p></div>
-      </div>
-      <div class="field"><label for="obj">Objetivo de aprendizaje <span class="req" aria-hidden="true">*</span></label>
-        <textarea id="obj" rows="4" required aria-describedby="e-obj" placeholder="Ej.: Reconocer las propiedades físicas del sonido mediante experimentos sencillos y grabación sonora">${esc(f.objetivo)}</textarea>
+      <div class="row-f"><label for="asig">Asignatura <span class="req" aria-hidden="true">*</span></label>
+        <select id="asig" required aria-describedby="e-asig"><option value="">Seleccione una…</option>${ASIGNATURAS.map(a => `<option ${f.asignatura === a ? 'selected' : ''}>${a}</option>`).join('')}</select>
+        <p class="err" id="e-asig"></p></div>
+      <div class="row-f"><label for="grado">Grado <span class="req" aria-hidden="true">*</span></label>
+        <select id="grado" required aria-describedby="e-grado"><option value="">Seleccione uno…</option>${GRADOS.map(a => `<option ${f.grado === a ? 'selected' : ''}>${a}</option>`).join('')}</select>
+        <p class="err" id="e-grado"></p></div>
+      <div class="field"><label class="big-l" for="obj">Objetivo de aprendizaje <span class="req" aria-hidden="true">*</span></label>
+        <textarea id="obj" rows="3" required aria-describedby="e-obj" placeholder="Ej.: Reconocer las propiedades físicas del sonido mediante experimentos sencillos y grabación sonora">${esc(f.objetivo)}</textarea>
         <p class="err" id="e-obj"></p></div>
-      <fieldset class="field" style="border:0;padding:0;margin:14px 0" aria-describedby="e-enf">
-        <legend>Enfoque principal <span class="req" aria-hidden="true">*</span></legend>
-        <p class="note" style="margin:2px 0 0">La actividad puede incluir matices de los otros enfoques. Elige uno.</p>
+      <fieldset class="field enf-f" aria-describedby="e-enf">
+        <legend>Enfoque principal <span class="req" aria-hidden="true">*</span> <span class="note">La actividad puede incluir matices de los otros enfoques. Elige uno.</span></legend>
         <div class="enf-grid">${Object.entries(ENFOQUES).map(([k, e]) => `
           <label class="enf e-${k}"><input type="radio" name="enf" value="${k}" ${f.enfoque === k ? 'checked' : ''}>
             <span class="chk">${ic('check')}</span><strong>${e.n}</strong><small>${e.d}</small></label>`).join('')}</div>
         <p class="err" id="e-enf"></p>
       </fieldset>
-      <div class="bar">
-        <button class="btn btn-light" type="submit">Generar propuesta</button><span class="vr" aria-hidden="true"></span>
+      <div class="bar gen">
+        <button class="btn btn-light" type="submit">Generar propuesta de actividad</button><span class="vr" aria-hidden="true"></span>
         <p><strong>Antes de generar:</strong> la asignatura, el grado y el objetivo no podrás editarlos después. Lo que sí podrás ajustar es la ficha de la actividad.</p>
       </div>
-    </form></main>`);
+    </form></div></main>`;
+}
+function p3() {
+  view(formHTML());
   const save = () => { S.form = {asignatura:$('#asig').value, grado:$('#grado').value, objetivo:$('#obj').value, enfoque:($('input[name=enf]:checked') || {}).value || ''}; };
   $('#f-crear').addEventListener('input', save); $('#f-crear').addEventListener('change', save);
   $('#f-crear').addEventListener('submit', e => {
@@ -323,18 +333,21 @@ function p3() {
   });
 }
 
-/* ================= P4 · Buscando la propuesta ================= */
+/* ================= P4 · Buscando la plantilla (ventana sobre el formulario) ================= */
 function p4() {
   if (!S.form.asignatura || !S.form.grado || !S.form.objetivo.trim() || !S.form.enfoque) { location.hash = '#/p3'; return; }
-  view(`${cabecera()}<main class="page" style="max-width:1000px">${steps(2)}
-    <section class="panel loading" aria-live="polite"><h1>Buscando una plantilla para tu objetivo…</h1>
-    <p style="font-size:20px">Estamos revisando el catálogo de plantillas del enfoque <strong>${ENFOQUES[S.form.enfoque].n}</strong>.</p>
-    <div class="icons">${ic('book')}${ic('bulb')}${ic('pencil')}${ic('group')}</div></section></main>`);
+  view(formHTML()); $('#app').inert = true;
+  const m = openModal(`<div class="l-logo">${asset(LOGO_W, 'Logo Bibliolab Activa (versión blanca)', 'logo-main')}</div>
+    <div class="l-body" role="status"><h1 id="m-title" tabindex="-1">Buscando una plantilla para tu objetivo…</h1>
+    <p>Estamos revisando el catálogo de plantillas del enfoque <strong>${ENFOQUES[S.form.enfoque].n}</strong>. Puede tardar unos segundos; no cierres la pestaña.</p>
+    <div class="ld-icons" aria-hidden="true">${ic('book')}${ic('bulb')}${ic('pencil')}${ic('group')}</div><div class="row c"><button class="btn btn-ghost" data-close>Cancelar y volver al formulario</button></div></div>`, 'load', () => { location.hash = '#/p3'; });
+  m.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeModal(); });
+  $('#m-title', m).focus();
   S.timer = setTimeout(() => {
     if (S.demo.conexion) {
-      $('.loading').innerHTML = `<h1>No pudimos crear la propuesta</h1><p style="font-size:20px">No pudimos crear la propuesta. Tus datos se conservaron; reinténtalo.</p>
-        <div class="row" style="justify-content:center"><button class="btn btn-light" id="reint">Reintentar</button><a class="btn btn-ghost" style="color:#fff;border-color:#fff" href="#/p3">Volver al formulario</a></div>`;
-      $('#reint').onclick = p4; $('.loading h1').setAttribute('tabindex', '-1'); $('.loading h1').focus();
+      $('.l-body', m).innerHTML = `<h1 id="m-title" tabindex="-1">No pudimos crear la propuesta</h1><p>No pudimos crear la propuesta. Tus datos se conservaron; reinténtalo.</p>
+        <div class="row c"><button class="btn btn-light" id="reint">Reintentar</button><a class="btn btn-ghost" href="#/p3">Volver al formulario</a></div>`;
+      $('#reint', m).onclick = p4; $('#m-title', m).focus();
       return;
     }
     if (S.demo.sinPlantilla || /sin-plantilla/i.test(S.form.objetivo)) { location.hash = '#/p11'; return; }
@@ -385,22 +398,24 @@ function readEdit(f) {
 }
 
 /* ================= P5 · Propuesta (borrador) ================= */
+function propHTML(f) {
+  return `${cabecera(2)}<main class="page prop">
+    <h1>Propuesta y edición de ficha</h1>
+    <div class="pill-row"><p class="pill-d">Presentación de la propuesta pedagógica estructurada y flexibilidad de ajuste manual antes de la confirmación.</p><span class="book-box" aria-hidden="true">${ic('book')}</span></div>
+    <section class="blue-frame"><div class="screen"><div class="sheet-wrap" tabindex="0" aria-label="Borrador de la ficha, desplázate para leerlo completo">${S.editing ? `<div class="ficha">${editFormHTML(f)}</div>` : fichaHTML(f)}</div></div>
+      <div class="float-actions">
+        ${S.editing ? `<button class="btn btn-primary" id="guardar">${ic('check')} Guardar cambios</button><button class="btn btn-ghost" id="descartar">Descartar cambios</button>`
+        : `<button class="btn btn-ghost" id="editar">${ic('pencil')} Editar manualmente</button>
+           <button class="btn btn-ghost" id="regen">Regenerar propuesta</button>
+           <button class="btn btn-ghost" id="vista">Vista completa</button>`}
+      </div></section>
+    <div class="bar"><p>Este es un borrador de la ficha de la actividad final, aún sin código; puedes hacer ediciones manuales antes de continuar. <span class="note">(Propuesta del catálogo ${S.idx + 1} de ${CATALOGO[f.enfoque].length})</span></p>
+      <p id="msg5" class="err" role="alert"></p><button class="btn btn-light" id="cont">Continuar</button></div></main>`;
+}
 function p5() {
   if (!S.draft) { location.hash = '#/p3'; return; }
   const f = S.draft;
-  view(`${cabecera()}<main class="page" style="max-width:1100px">${steps(2)}
-    <h1>Propuesta y edición de ficha</h1>
-    <p class="lead" style="font-weight:500">Es un borrador; puedes ajustarlo antes de confirmar. Aún no tiene código. <span class="note">(Propuesta del catálogo ${S.idx + 1} de ${CATALOGO[f.enfoque].length})</span></p>
-    <div class="sheet-wrap" tabindex="0" aria-label="Borrador de la ficha, desplázate para leerlo completo">${S.editing ? `<div class="ficha">${editFormHTML(f)}</div>` : fichaHTML(f)}</div>
-    <div class="float-actions">
-      ${S.editing ? `<button class="btn btn-primary" id="guardar">${ic('check')} Guardar cambios</button><button class="btn btn-ghost" id="descartar">Descartar cambios</button>`
-      : `<button class="btn btn-ghost" id="editar">${ic('pencil')} Editar manualmente</button>
-         <button class="btn btn-ghost" id="regen">Regenerar propuesta</button>
-         <button class="btn btn-ghost" id="vista">Vista completa</button>`}
-    </div>
-    <p id="msg5" class="err" role="alert"></p>
-    <div class="bar"><p>Este es un borrador de la ficha de la actividad final. Puedes hacer ediciones manuales antes de continuar.</p>
-      <button class="btn btn-light" id="cont">Continuar</button></div></main>`);
+  view(propHTML(f));
   const msg = t => $('#msg5').textContent = t;
   if ($('#editar')) {
     $('#editar').onclick = () => { S.editing = true; p5(); $('#e-titulo').focus(); };
@@ -428,30 +443,51 @@ function p5() {
   };
 }
 
-/* ================= P6 · Fecha estimada ================= */
+/* ================= P6 · Fecha estimada (ventana sobre la propuesta) ================= */
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 function p6() {
   if (!S.draft) { location.hash = '#/p3'; return; }
-  view(`${cabecera()}<main class="page" style="max-width:1100px">${steps(3)}
-    <section class="panel"><div class="two" style="align-items:center">
-      <div><h1>Fecha estimada de la sesión</h1><p style="font-size:19px">Es opcional. Define el momento tentativo en el que llevarás a tus estudiantes a la Bibliolab.</p>
-        ${asset(A.caritas, 'Caritas de estudiantes (ilustración)', 'caritas')}</div>
-      <div><div class="field" style="color:#fff"><label for="fecha" style="color:#fff">Fecha estimada (opcional)</label>
-        <input type="date" id="fecha" min="${hoy()}" value="${S.fecha}" aria-describedby="fecha-note e-fecha"></div>
-        <p class="err" id="e-fecha" role="alert"></p>
-        <p id="fecha-note" class="note">${ic('info').replace('<svg', '<svg width="20" height="20" style="vertical-align:-4px"')} No reserva el espacio; confirma la disponibilidad con la encargada de la Bibliolab.</p>
-        <button class="link" style="color:#fff" id="quitar" type="button">Continuar sin fecha</button></div></div>
-      <p id="e-gen" class="err" role="alert" style="margin-top:14px"></p>
-      <div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-light" id="gen">Generar ficha y código único</button>
-        <a class="btn btn-ghost" style="color:#fff;border-color:#fff" href="#/p5">Volver a la propuesta</a></div></section></main>`);
-  $('#fecha').onchange = e => { S.fecha = e.target.value; };
-  $('#quitar').onclick = () => { S.fecha = ''; $('#fecha').value = ''; $('#e-fecha').textContent = ''; toast('Sin fecha estimada'); };
-  $('#gen').onclick = () => {
-    const v = $('#fecha').value;
-    if (v && v < hoy()) { $('#e-fecha').textContent = 'La fecha no puede ser anterior a hoy.'; $('#fecha').setAttribute('aria-invalid', 'true'); return; }
-    S.fecha = v; $('#e-fecha').textContent = ''; $('#e-gen').textContent = '';
-    const b = $('#gen'); b.disabled = true; b.textContent = 'Generando…';
+  view(propHTML(S.draft)); $('#app').inert = true;
+  const now = new Date(), minY = now.getFullYear(), minM = now.getMonth();
+  let cy = minY, cm = minM;
+  if (S.fecha) { const [y, mo] = S.fecha.split('-'); cy = +y; cm = +mo - 1; }
+  const m = openModal(`${xBtn}<div class="fecha-grid">
+      <div class="fl"><h2 id="m-title">Programación estimada de la sesión</h2><p>Es opcional. Define el momento tentativo en el que llevarás a tus estudiantes a la Bibliolab.</p>${asset(A.caritas, 'Caritas de estudiantes (ilustración)', 'caritas')}</div>
+      <span class="vline" aria-hidden="true"></span>
+      <div class="fr"><h3>${ic('cal')} Selector de fecha</h3><div class="calwrap"><div class="cal" id="cal"></div>
+        <div class="fecha-info"><p>${ic('info').replace('<svg', '<svg width="22" height="22" style="vertical-align:-5px"')} <strong>Nota:</strong> la fecha es informativa y no reserva el espacio. Confirma la disponibilidad con la encargada de la Bibliolab.</p><p id="sel" aria-live="polite"></p></div></div></div></div>
+    <p id="e-fecha" class="err" role="alert"></p><p id="e-gen" class="err" role="alert"></p>
+    <div class="row c"><button class="btn btn-light" id="gen">Generar ficha y código único</button><button class="link" id="quitar" type="button">Continuar sin fecha</button><button class="link" data-close type="button">Volver a la propuesta</button></div>`, 'xl', () => { location.hash = '#/p5'; });
+  m.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeModal(); });
+  const drawCal = focusSel => {
+    const start = (new Date(cy, cm, 1).getDay() + 6) % 7, dim = new Date(cy, cm + 1, 0).getDate(), h = hoy();
+    const canPrev = cy > minY || (cy === minY && cm > minM);
+    let cells = ''; for (let i = 0; i < start; i++) cells += '<span></span>';
+    for (let d = 1; d <= dim; d++) {
+      const iso = `${cy}-${String(cm + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      cells += `<button type="button" data-d="${iso}" aria-label="${d} de ${MESES[cm]} de ${cy}" aria-pressed="${S.fecha === iso}" ${iso < h ? 'disabled' : ''}>${d}</button>`;
+    }
+    $('#cal', m).innerHTML = `<div class="cal-h"><button type="button" class="cal-n" id="c-prev" aria-label="Mes anterior" ${canPrev ? '' : 'disabled'}>${ic('left')}</button>
+      <select id="c-m" aria-label="Mes">${MESES.map((n, i) => `<option value="${i}" ${i === cm ? 'selected' : ''} ${cy === minY && i < minM ? 'disabled' : ''}>${n[0].toUpperCase() + n.slice(1)}</option>`).join('')}</select>
+      <select id="c-y" aria-label="Año">${[minY, minY + 1, minY + 2].map(y => `<option ${y === cy ? 'selected' : ''}>${y}</option>`).join('')}</select>
+      <button type="button" class="cal-n" id="c-next" aria-label="Mes siguiente">${ic('right')}</button></div>
+      <div class="cal-w" aria-hidden="true">${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(x => `<span>${x}</span>`).join('')}</div><div class="cal-g">${cells}</div>`;
+    $('#sel', m).textContent = S.fecha ? 'Fecha elegida: ' + fmtFecha(S.fecha) : 'Sin fecha elegida.';
+    $('#c-prev', m).onclick = () => { cm--; if (cm < 0) { cm = 11; cy--; } drawCal('#c-prev'); };
+    $('#c-next', m).onclick = () => { cm++; if (cm > 11) { cm = 0; cy++; } drawCal('#c-next'); };
+    $('#c-m', m).onchange = e => { cm = +e.target.value; drawCal('#c-m'); };
+    $('#c-y', m).onchange = e => { cy = +e.target.value; if (cy === minY && cm < minM) cm = minM; drawCal('#c-y'); };
+    m.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { S.fecha = S.fecha === b.dataset.d ? '' : b.dataset.d; $('#e-fecha', m).textContent = ''; drawCal('[data-d="' + b.dataset.d + '"]'); });
+    if (focusSel) { const el = $(focusSel, m); if (el && !el.disabled) el.focus(); }
+  };
+  drawCal();
+  $('#quitar', m).onclick = () => { S.fecha = ''; drawCal(); toast('Sin fecha estimada'); };
+  $('#gen', m).onclick = () => {
+    if (S.fecha && S.fecha < hoy()) { $('#e-fecha', m).textContent = 'La fecha no puede ser anterior a hoy.'; return; }
+    $('#e-fecha', m).textContent = ''; $('#e-gen', m).textContent = '';
+    const b = $('#gen', m); b.disabled = true; b.textContent = 'Generando…';
     S.timer = setTimeout(() => {
-      if (S.demo.conexion) { b.disabled = false; b.textContent = 'Generar ficha y código único'; $('#e-gen').textContent = 'No pudimos crear la propuesta. Tus datos se conservaron; reinténtalo.'; return; }
+      if (S.demo.conexion) { b.disabled = false; b.textContent = 'Generar ficha y código único'; $('#e-gen', m).textContent = 'No pudimos crear la propuesta. Tus datos se conservaron; reinténtalo.'; return; }
       const a = {codigo:genCodigo(), estado:'Programada', fecha:S.fecha, ficha:JSON.parse(JSON.stringify(S.draft)), evid:[]};
       store[a.codigo] = a; S.current = a; S.justCreated = true; location.hash = '#/p7';
     }, 900);
@@ -459,13 +495,17 @@ function p6() {
 }
 
 /* ================= P7 · Gestión de la actividad ================= */
+const BLOBS_BOTTOM = `<svg class="g-blobs" viewBox="0 0 1280 90" preserveAspectRatio="none" aria-hidden="true"><g stroke="#fff3cf" stroke-width="4">
+  <ellipse cx="190" cy="104" rx="170" ry="58" fill="#1fb5d6"/><ellipse cx="330" cy="106" rx="80" ry="52" fill="#f2b81c"/><ellipse cx="520" cy="100" rx="130" ry="56" fill="#e6197a"/>
+  <ellipse cx="650" cy="106" rx="80" ry="48" fill="#5aa83c"/><ellipse cx="800" cy="106" rx="130" ry="46" fill="#1f4fa3"/><ellipse cx="980" cy="104" rx="150" ry="50" fill="#1fb5d6"/>
+  <ellipse cx="1130" cy="104" rx="90" ry="40" fill="#e6197a"/><ellipse cx="1240" cy="70" rx="80" ry="58" fill="#f2b81c"/><ellipse cx="1260" cy="104" rx="90" ry="60" fill="#ef6a22"/></g></svg>`;
 function p7() {
   const a = S.current; if (!a) { location.hash = '#/p1'; return; }
   const f = a.ficha, off = a.estado === 'Inactiva';
-  view(`${cabecera()}<main class="page gestion">
-    ${S.justCreated ? `<div class="ok-bar" role="status">${ic('check')} ¡Experiencia pedagógica creada con éxito!</div>` : ''}
-    <div class="g-head"><div><h1>Gestión de actividad</h1><p class="sub">${esc(f.titulo)}</p></div>
-      <p class="estado ${off ? 'off' : 'on'}"><span class="dot" aria-hidden="true"></span>Estado: <strong>${a.estado}</strong></p></div>
+  view(`<main class="page gestion"><div class="side-char">${asset(A.docente, 'Personaje docente (ilustración)', 'char-l')}</div>
+    <div class="g-head"><div><h1>Gestión de actividad: <span class="cod-h">${esc(a.codigo)}</span></h1><p class="sub">${esc(f.titulo)}</p></div>
+      <div class="g-state"><button class="icbtn danger" id="cancelar" ${off ? 'disabled' : ''}>${ic('trash')}<span>Cancelar actividad</span></button>
+        <p class="estado ${off ? 'off' : 'on'}"><span class="dot" aria-hidden="true"></span><span class="est-t">Estado:<strong>${a.estado}</strong></span></p></div></div>
     ${off ? `<div class="warn" role="status">${ic('info')} <span>Esta actividad está Inactiva. Informa a la encargada de la Bibliolab para liberar los recursos y el espacio.</span></div>` : ''}
     <div class="g-grid">
       <section><h2>Ficha de experiencia</h2>
@@ -474,21 +514,22 @@ function p7() {
         <dt>Producto esperado</dt><dd>${esc(f.producto)}</dd><dt>Duración</dt><dd>${totalMin(f)} min</dd>
         <dt>Fecha estimada</dt><dd>${fmtFecha(a.fecha)}${a.fecha ? ' <span class="note">(no reserva el espacio)</span>' : ''}</dd>
         <dt>Recursos</dt><dd>${f.recursos.map(esc).join(', ')}</dd></dl>
-        <div class="actions">
-          <button class="btn btn-ghost" id="editar" ${off ? 'disabled' : ''}>${ic('pencil')} Editar ficha</button>
-          <button class="btn btn-ghost" id="respaldo">${ic('download')} Descargar respaldo (PDF + JSON)</button>
-          <button class="btn btn-danger" id="cancelar" ${off ? 'disabled' : ''}>${ic('trash')} Cancelar actividad</button></div>
+        <div class="icbtns">
+          <button class="icbtn" id="editar" ${off ? 'disabled' : ''}>${ic('pencil')}<span>Editar ficha</span></button>
+          <button class="icbtn" id="respaldo">${ic('download')}<span>Descargar respaldo (PDF + JSON)</span></button></div>
         <div id="msg7" role="status" aria-live="polite"></div>
-        <div class="ev-actions"><button class="btn btn-pink" id="subir" ${off ? 'disabled' : ''}>Subir evidencias de grupos de trabajo</button>
-          <a class="link" href="#/p10">Visualizar galería de evidencias</a></div>
+        <div class="ev-actions"><button class="btn btn-pink" id="subir" ${off ? 'disabled' : ''}>Subir evidencias de grupos de trabajo</button></div>
+        <p class="g-links"><a class="link" href="#/p10">Visualizar galería de evidencias</a> · <a class="link" href="#/p1">Ir al inicio</a></p>
       </section>
       <aside class="codigo-card" aria-label="Código de la actividad">
         <h2>Código</h2><p class="codigo">${esc(a.codigo)}</p>
         <p>Digítalo en el computador de la biblioteca. <strong class="warn-t">No lo compartas con los estudiantes.</strong></p>
         <button class="btn btn-primary" id="copiar">${ic('copy')} Copiar código</button></aside>
     </div>
-    <div style="margin-top:26px" class="row">${asset(A.docente, 'Personaje docente (ilustración)', 'char')}</div>
-    <p style="margin-top:20px"><a class="link" href="#/p1">Ir al inicio</a></p></main>`);
+    ${S.justCreated ? `<div class="g-toast" role="status"><span>¡Experiencia pedagógica creada con éxito!</span>${ic('check')}</div>` : ''}
+    <div class="g-foot-logo">${asset(A.logo, 'Logo Bibliolab Activa', 'logo-main')}</div>
+    <div class="g-foot-logos">${asset(A.craib, 'Logo CRAIB', 'logo-sm')}${asset(A.ie, 'Logo Institución Educativa Boyacá', 'logo-sm')}</div>
+    ${BLOBS_BOTTOM}</main>`);
   const m7 = (t, retry) => { $('#msg7').innerHTML = `<span class="${retry ? 'err' : 'msg-ok'}">${esc(t)}</span> ${retry ? '<button class="btn btn-ghost" id="reint7">Reintentar</button>' : ''}`; if (retry) $('#reint7').onclick = descargar; };
   $('#copiar').onclick = () => { try { navigator.clipboard.writeText(a.codigo); } catch (e) {} toast('Código copiado'); };
   $('#subir').onclick = () => { location.hash = '#/p9'; };
@@ -501,7 +542,7 @@ function p7() {
   $('#cancelar').onclick = () => {
     const m = openModal(`${xBtn}<h2 id="m-title">¿Deseas cancelar esta actividad?</h2>
       <p>La actividad con código <strong>${esc(a.codigo)}</strong> quedará Inactiva. Recuerda informar a la encargada de la Bibliolab para liberar los recursos y el espacio asignado.</p>
-      <div class="row"><button class="btn btn-light" data-ok>Confirmar cancelación</button><button class="btn btn-pink" style="border-color:#fff" data-close>Volver</button></div>`, 'pink');
+      <div class="row c"><button class="btn btn-light" data-ok>Confirmar cancelación</button><button class="btn btn-pink" style="border-color:#fff" data-close>Volver</button></div>`, 'pink center');
     m.addEventListener('click', e => {
       if (e.target.closest('[data-close]')) closeModal();
       if (e.target.closest('[data-ok]')) { closeModal(true); a.estado = 'Inactiva'; S.justCreated = false; p7(); toast('Actividad Inactiva. Informa a la encargada de la Bibliolab.'); }
@@ -523,66 +564,74 @@ function p7() {
 
 /* ================= P8 se abre desde P7 (modal) ================= */
 
-/* ================= P9 · Subir evidencias ================= */
-const FORMATOS = ['pdf','jpg','jpeg','png','docx'], MAX_MB = 5;
+/* ================= P9 · Subir evidencias (ventana sobre la gestión) ================= */
+const FORMATOS = ['pdf','jpg','jpeg','png','docx'], MAX_MB = 2;
 function p9() {
   const a = S.current; if (!a) { location.hash = '#/p1'; return; }
   if (a.estado === 'Inactiva') { location.hash = '#/p7'; return; }
+  p7(); $('#app').inert = true;
   const u = S.up;
-  view(`${cabecera()}<main class="page"><section class="card upl">
-    <h1>Subir evidencias</h1><p class="sub">Actividad ${esc(a.codigo)} · ${esc(a.ficha.titulo)}</p>
-    <div class="conds"><p style="margin:0"><strong>Sube el producto, no fotos con rostros.</strong> Recomendamos no incluir rostros ni nombres. Si el material identifica a alguien, necesitas autorización.
-      <button class="link" id="vercond" type="button">Ver condiciones de uso</button></p>
-      <label style="display:flex;gap:10px;margin-top:8px;align-items:flex-start"><input type="checkbox" id="ok" ${u.ok ? 'checked' : ''} style="width:22px;height:22px;margin-top:2px">
-      <span>Confirmo que leí las condiciones de uso y que el material cumple con ellas.</span></label>
-      <p class="err" id="e-ok" role="alert"></p></div>
+  const m = openModal('', 'pink upl-m', () => { location.hash = '#/p7'; });
+  const draw = () => {
+    m.innerHTML = `${xBtn}<h2 id="m-title" class="sr-only">Subir evidencias</h2><p class="up-sub">Subir evidencias · Actividad ${esc(a.codigo)} · ${esc(a.ficha.titulo)}</p>
     <fieldset class="tabs"><legend class="sr-only">Qué vas a compartir</legend>
-      ${[['archivo','Archivo'],['enlace','Enlace'],['descripcion','Descripción']].map(([k, t]) => `<label><input type="radio" name="modo" value="${k}" ${u.modo === k ? 'checked' : ''}><span>${t}</span></label>`).join('')}</fieldset>
-    <div id="cuerpo">${u.modo === 'archivo' ? `
+      ${[['archivo', 'Archivo'], ['enlace', 'Enlace'], ['descripcion', 'Descripción']].map(([k, t]) => `<label><input type="radio" name="modo" value="${k}" ${u.modo === k ? 'checked' : ''}><span>${t}</span></label>`).join('')}</fieldset>
+    <div class="inner-dash" id="cuerpo">${u.modo === 'archivo' ? `
       <label class="drop" id="drop"><input type="file" id="file" accept=".pdf,.jpg,.jpeg,.png,.docx">${ic('upload')}
-        <p style="margin:.3em 0"><strong>${u.file ? esc(u.file.name) : 'Arrastra el archivo aquí o haz clic para elegirlo'}</strong></p>
-        <p class="note" style="margin:0">Formatos y tamaño máximo: <span class="tag-pd">[por definir]</span> — de ejemplo: PDF, JPG, PNG, DOCX, hasta ${MAX_MB} MB.</p></label>`
-      : u.modo === 'enlace' ? `<div class="field"><label for="enlace">Enlace al producto</label><input type="url" id="enlace" placeholder="https://" value="${esc(u.enlace)}"></div>`
-      : `<div class="field"><label for="desc">Descripción del producto</label><textarea id="desc" rows="4" placeholder="Describe el producto del grupo (sin nombres de estudiantes)">${esc(u.desc)}</textarea></div>`}
+        <p style="margin:.4em 0 0;font-size:20px"><strong>${u.file ? esc(u.file.name) : 'Arrastra los archivos o haz clic para elegirlos'}</strong></p>
+        <p style="margin:.2em 0;font-size:18px">Límite de peso: ${MAX_MB} MB (de ejemplo) <span class="tag-pd">[por definir]</span></p>
+        <p class="note" style="margin:0">Formatos de ejemplo: PDF, JPG, PNG, DOCX <span class="tag-pd">[por definir]</span></p></label>`
+      : u.modo === 'enlace' ? `<div class="field" style="width:100%"><label for="enlace">Enlace al producto</label><input type="url" id="enlace" placeholder="https://" value="${esc(u.enlace)}"></div>`
+      : `<div class="field" style="width:100%"><label for="desc">Descripción del producto</label><textarea id="desc" rows="4" placeholder="Describe el producto del grupo (sin nombres de estudiantes)">${esc(u.desc)}</textarea></div>`}
     </div>
     <p class="err" id="e-cuerpo" role="alert"></p>
-    <div class="field"><label for="grupo">Número o etiqueta del grupo <span class="note">(opcional)</span></label>
-      <input type="text" id="grupo" maxlength="30" placeholder="Ej.: Grupo 1" value="${esc(u.grupo)}">
-      <p class="note">Usa un número o una etiqueta que no identifique a personas.</p></div>
+    <div class="up-row">
+      <div class="field"><label for="grupo">Número o etiqueta del grupo <span class="note">(opcional)</span></label>
+        <input type="text" id="grupo" maxlength="30" placeholder="Ej.: Grupo 1" value="${esc(u.grupo)}"></div>
+      <div class="conds"><p style="margin:0"><strong>Sube el producto, no fotos con rostros.</strong> Sin rostros ni nombres; si el material identifica a alguien, necesitas autorización.</p>
+        <details class="conds-d"><summary>Ver condiciones de uso</summary>${condicionesHTML()}</details>
+        <label style="display:flex;gap:10px;margin-top:6px;align-items:flex-start"><input type="checkbox" id="ok" ${u.ok ? 'checked' : ''} style="width:22px;height:22px;margin-top:2px">
+        <span>Confirmo que leí las condiciones de uso y que el material cumple con ellas.</span></label>
+        <p class="err" id="e-ok" role="alert"></p></div></div>
     <div id="prog" hidden><div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div></div></div><p id="prog-t" class="note"></p></div>
-    <div class="row"><button class="btn btn-pink" id="enviar">Subir evidencia</button><a class="btn btn-ghost" href="#/p7">Volver a la gestión</a></div>
-  </section></main>`);
-  const collect = () => { u.ok = $('#ok').checked; u.grupo = $('#grupo').value; if ($('#enlace')) u.enlace = $('#enlace').value; if ($('#desc')) u.desc = $('#desc').value; };
-  $('#vercond').onclick = abrirCondiciones;
-  document.querySelectorAll('input[name=modo]').forEach(r => r.onchange = () => { collect(); u.modo = r.value; p9(); });
-  const setFile = f => {
-    const ext = (f.name.split('.').pop() || '').toLowerCase(), err = $('#e-cuerpo');
-    if (!FORMATOS.includes(ext)) { u.file = null; err.textContent = 'Formato no admitido. Formatos de ejemplo: PDF, JPG, PNG, DOCX [por definir].'; return; }
-    if (f.size > MAX_MB * 1024 * 1024) { u.file = null; err.textContent = `Archivo demasiado grande (máximo de ejemplo: ${MAX_MB} MB [por definir]). Comprímelo e inténtalo de nuevo.`; return; }
-    collect(); u.file = f; p9();
+    <div class="row c"><button class="btn btn-light" id="enviar">Subir evidencia</button></div>`;
+    bind();
+    const r = m.querySelector('input[name=modo]:checked'); if (r) r.focus();
   };
-  if ($('#file')) {
-    $('#file').onchange = e => { if (e.target.files[0]) setFile(e.target.files[0]); };
-    const d = $('#drop');
-    ['dragover', 'dragenter'].forEach(ev => d.addEventListener(ev, e => { e.preventDefault(); d.classList.add('over'); }));
-    ['dragleave', 'drop'].forEach(ev => d.addEventListener(ev, e => { e.preventDefault(); d.classList.remove('over'); }));
-    d.addEventListener('drop', e => { if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
-  }
+  const collect = () => { u.ok = $('#ok', m).checked; u.grupo = $('#grupo', m).value; if ($('#enlace', m)) u.enlace = $('#enlace', m).value; if ($('#desc', m)) u.desc = $('#desc', m).value; };
+  const bind = () => {
+    m.querySelector('[data-close]').onclick = () => closeModal();
+    m.querySelectorAll('input[name=modo]').forEach(r => r.onchange = () => { collect(); u.modo = r.value; draw(); });
+    const setFile = f => {
+      const ext = (f.name.split('.').pop() || '').toLowerCase(), err = $('#e-cuerpo', m);
+      if (!FORMATOS.includes(ext)) { u.file = null; err.textContent = 'Formato no admitido. Formatos de ejemplo: PDF, JPG, PNG, DOCX [por definir].'; return; }
+      if (f.size > MAX_MB * 1024 * 1024) { u.file = null; err.textContent = `Archivo demasiado grande (máximo de ejemplo: ${MAX_MB} MB [por definir]). Comprímelo e inténtalo de nuevo.`; return; }
+      collect(); u.file = f; draw();
+    };
+    if ($('#file', m)) {
+      $('#file', m).onchange = e => { if (e.target.files[0]) setFile(e.target.files[0]); };
+      const d = $('#drop', m);
+      ['dragover', 'dragenter'].forEach(ev => d.addEventListener(ev, e => { e.preventDefault(); d.classList.add('over'); }));
+      ['dragleave', 'drop'].forEach(ev => d.addEventListener(ev, e => { e.preventDefault(); d.classList.remove('over'); }));
+      d.addEventListener('drop', e => { if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
+    }
+    $('#enviar', m).onclick = enviar;
+  };
   const enviar = () => {
-    collect(); $('#e-ok').textContent = ''; $('#e-cuerpo').textContent = '';
-    if (!u.ok) { $('#e-ok').textContent = 'Marca la casilla para confirmar las condiciones de uso.'; $('#ok').focus(); return; }
+    collect(); $('#e-ok', m).textContent = ''; $('#e-cuerpo', m).textContent = '';
+    if (!u.ok) { $('#e-ok', m).textContent = 'Marca la casilla para confirmar las condiciones de uso.'; $('#ok', m).focus(); return; }
     let nombre = '';
-    if (u.modo === 'archivo') { if (!u.file) { $('#e-cuerpo').textContent = 'Elige un archivo para subir.'; return; } nombre = u.file.name; }
-    if (u.modo === 'enlace') { if (!/^https?:\/\/\S+\.\S+/.test(u.enlace.trim())) { $('#e-cuerpo').textContent = 'Escribe un enlace válido que empiece por http:// o https://.'; return; } nombre = u.enlace.trim(); }
-    if (u.modo === 'descripcion') { if (!u.desc.trim()) { $('#e-cuerpo').textContent = 'Escribe la descripción del producto.'; return; } nombre = u.desc.trim().slice(0, 90); }
-    const bar = $('#prog'), fill = $('.prog > div'), pt = $('#prog-t'), btn = $('#enviar');
+    if (u.modo === 'archivo') { if (!u.file) { $('#e-cuerpo', m).textContent = 'Elige un archivo para subir.'; return; } nombre = u.file.name; }
+    if (u.modo === 'enlace') { if (!/^https?:\/\/\S+\.\S+/.test(u.enlace.trim())) { $('#e-cuerpo', m).textContent = 'Escribe un enlace válido que empiece por http:// o https://.'; return; } nombre = u.enlace.trim(); }
+    if (u.modo === 'descripcion') { if (!u.desc.trim()) { $('#e-cuerpo', m).textContent = 'Escribe la descripción del producto.'; return; } nombre = u.desc.trim().slice(0, 90); }
+    const bar = $('#prog', m), fill = $('.prog > div', m), pt = $('#prog-t', m), btn = $('#enviar', m);
     bar.hidden = false; btn.disabled = true; let p = 0; pt.textContent = 'Subiendo…';
     clearInterval(S.iv);
     S.iv = setInterval(() => {
       p += 12; const stop = S.demo.subida && p >= 60;
       if (stop) p = 60;
-      fill.style.width = p + '%'; $('.prog').setAttribute('aria-valuenow', p);
-      if (stop) { clearInterval(S.iv); btn.disabled = false; pt.innerHTML = '<span class="err">No se completó la carga.</span> <button class="btn btn-ghost" id="reint9">Reintentar</button>'; $('#reint9').onclick = enviar; $('#reint9').focus(); return; }
+      fill.style.width = p + '%'; $('.prog', m).setAttribute('aria-valuenow', p);
+      if (stop) { clearInterval(S.iv); btn.disabled = false; pt.innerHTML = '<span class="err">No se completó la carga.</span> <button class="btn btn-light" id="reint9">Reintentar</button>'; $('#reint9', m).onclick = enviar; $('#reint9', m).focus(); return; }
       if (p >= 100) {
         clearInterval(S.iv);
         a.evid.push({tipo:u.modo, nombre, grupo:u.grupo.trim()});
@@ -591,14 +640,14 @@ function p9() {
       }
     }, 280);
   };
-  $('#enviar').onclick = enviar;
+  draw();
 }
 
 /* ================= P10 · Galería de evidencias ================= */
 function p10() {
   const a = S.current; if (!a) { location.hash = '#/p1'; return; }
   const T = {archivo:'Archivo', enlace:'Enlace', descripcion:'Descripción'};
-  view(`${cabecera()}<main class="page" style="max-width:1000px">
+  view(`${cabecera()}<main class="page">
     <h1>Galería de evidencias</h1><p class="sub">Actividad ${esc(a.codigo)} · ${esc(a.ficha.titulo)}</p>
     ${a.evid.length ? `<ul class="ev-list">${a.evid.map((e, i) => `<li class="ev-item"><div class="info"><span class="tipo">${T[e.tipo]}</span><span class="g">${esc(e.grupo || 'Sin grupo asignado')}</span><br>${esc(e.nombre)}</div>
         <button class="btn btn-danger" data-del="${i}" aria-label="Eliminar evidencia: ${esc(e.nombre)}">${ic('trash')} Eliminar</button></li>`).join('')}</ul>`
@@ -612,8 +661,8 @@ function p10() {
 
 /* ================= P11 · Sin plantilla coincidente ================= */
 function p11() {
-  view(`${cabecera()}<main class="page" style="max-width:900px">${steps(2)}
-    <section class="panel" style="text-align:center"><h1>No encontramos una propuesta para tu objetivo</h1>
+  view(`${cabecera(2)}<main class="page">
+    <section class="panel mid" style="text-align:center"><h1>No encontramos una propuesta para tu objetivo</h1>
     <p style="font-size:20px">Reformula el objetivo o cambia el enfoque principal e inténtalo de nuevo. Tus datos se conservaron.</p>
     <div class="row" style="justify-content:center"><a class="btn btn-light" href="#/p3">Volver al formulario</a></div></section></main>`);
 }
@@ -621,6 +670,7 @@ function p11() {
 /* ================= Router ================= */
 const R = {p1, p2, p3, p4, p5, p6, p7, p9, p10, p11, p23};
 function route() {
+  $('#app').inert = false;
   clearTimeout(S.timer); clearInterval(S.iv); closeModal(true); S.editing = false;
   const k = (location.hash.replace(/^#\/?/, '') || 'p1').toLowerCase();
   (R[k] || p1)(); renderDemo();
@@ -655,5 +705,13 @@ function renderDemo() {
   $('#d-hide').onclick = () => { demoHidden = true; renderDemo(); };
 }
 document.addEventListener('keydown', e => { if (e.shiftKey && e.key === 'D' && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName)) { demoHidden = !demoHidden; renderDemo(); } });
+
+/* Escala el lienzo 1280x720 para que quepa completo en la ventana (sin scroll) */
+function fit() {
+  const k = Math.min(innerWidth / 1280, innerHeight / 720), st = $('#stage');
+  st.style.width = (innerWidth / k) + 'px'; st.style.height = (innerHeight / k) + 'px';
+  st.style.transform = `scale(${k})`; st.style.left = '0px'; st.style.top = '0px';
+}
+addEventListener('resize', fit); fit();
 
 route();
