@@ -211,7 +211,7 @@ function condicionesHTML() {
     <li><strong>Sube el producto, no a las personas.</strong> Comparte lo que hizo el grupo (cartelera, maqueta, archivo), sin rostros ni nombres.</li>
     <li>Si el material permite identificar a una persona, necesitas la <strong>autorización</strong> de quien corresponda antes de subirlo.</li>
     <li>Las evidencias solo se consultan con el <strong>código de la actividad</strong>.</li>
-    <li>Tiempo que se conservan las evidencias: <span class="tag-pd">[por definir]</span></li>
+    <li>Tiempo que se conservan las evidencias: <span class="tag-pd">[5 Dias]</span></li>
   </ul>`;
 }
 function p23() {
