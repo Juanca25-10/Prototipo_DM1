@@ -87,7 +87,7 @@ const P = {paso:'inicio', grupo:''};      // estado de la entrega local
 const totalMin = f => f.momentos.reduce((s, m) => s + (+m.min || 0), 0);
 const fmt = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
 const fins = () => S.grupos.filter(g => g.estado === 'Finalizado').length;
-const lockMsg = () => 'Hiciste varios intentos con códigos inválidos. Espera un momento antes de volver a intentar. (Número de intentos y tiempo de espera: [por definir])';
+const lockMsg = () => 'Hiciste varios intentos con códigos inválidos. Espera un momento antes de volver a intentar. (Número de intentos y tiempo de espera: [10 segundos])';
 
 /* ---------- Sonido (señal sonora; siempre hay texto junto a ella) ---------- */
 let ac;
@@ -388,7 +388,7 @@ function condiciones() {
     <li><strong>Fotografía el producto, no a las personas.</strong> Sin rostros ni nombres.</li>
     <li>Si el material permite identificar a una persona, se necesita la autorización de quien corresponda.</li>
     <li>Las fotos se consultan solo desde el punto físico y desde la actividad con su código.</li>
-    <li>Tiempo que se conservan las fotos: <span class="tag-pd">[por definir]</span></li></ul>
+    <li>Tiempo que se conservan las fotos: <span class="tag-pd">[10 dias]</span></li></ul>
     <div class="row-c"><button class="btn btn-light" data-close>Entendido</button></div>`, 'light');
 }
 function p21() {
@@ -404,7 +404,7 @@ function p21() {
     <p>Cada grupo se pasa frente a la pantalla y toma una foto de su producto.</p><p class="strong">Fotografíen el producto, no a las personas.</p>
     <div class="field"><label for="gnum">Número de grupo</label><input id="gnum" type="number" min="1" max="20" value="${esc(P.grupo)}" ${paso === 'ok' ? 'disabled' : ''}></div>
     <p id="e21" class="err" role="alert"></p>
-    <p class="note">La foto se guarda en la galería del punto físico. Cuánto tiempo se conserva: <span class="tag-pd">[por definir]</span>. <button class="link" id="cond" type="button">Ver condiciones de uso</button></p></div>
+    <p class="note">La foto se guarda en la galería del punto físico. Cuánto tiempo se conserva: <span class="tag-pd">[10 dias]</span>. <button class="link" id="cond" type="button">Ver condiciones de uso</button></p></div>
     <div class="l-right">${right}<div class="row-c">${btns}</div></div></section></main>`);
   const g = $('#gnum'); g.oninput = () => { P.grupo = g.value; };
   $('#cond').onclick = condiciones;
@@ -422,7 +422,7 @@ function p21() {
 function p22() {
   if (!S.act) { location.hash = '#/p12'; return; }
   shell(`<main class="scr"><section class="pnl pnl-w" style="min-height:460px"><h1>Galería del punto físico</h1>
-    <p class="note">Solo consulta: aquí no se puede eliminar ni modificar. Sin nombres ni datos de estudiantes. Tiempo de conservación: <span class="tag-pd">[por definir]</span></p>
+    <p class="note">Solo consulta: aquí no se puede eliminar ni modificar. Sin nombres ni datos de estudiantes. Tiempo de conservación: <span class="tag-pd">[5 dias]</span></p>
     ${S.fotos.length ? `<div class="gal">${S.fotos.map(f => `<div class="ph">${ic('image')}Grupo ${esc(f.grupo)}<small>${f.hora}</small></div>`).join('')}</div>` : '<div class="empty" role="status">Aún no hay fotos</div>'}
     <div class="row-c" style="margin-top:14px"><a class="btn btn-light" href="#/p20">Volver</a></div></section></main>`);
 }
