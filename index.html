@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bibliolab Activa · Prototipos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--blue:#1f4fa3;--blue-d:#14377a;--pink:#d81b7a;--cream:#fcebb9;--ink:#14275a}
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%}
+    body{font-family:'Montserrat',system-ui,sans-serif;color:var(--ink);background:var(--cream);min-height:100vh;display:flex;flex-direction:column;align-items:center;position:relative;overflow-x:hidden}
+    :focus-visible{outline:3px solid #14275a;outline-offset:3px;box-shadow:0 0 0 6px #fff}
+    .blobs{position:fixed;left:0;right:0;bottom:0;width:100%;height:150px;pointer-events:none;z-index:0}
+    .dash{position:fixed;top:-90px;right:-60px;width:380px;height:380px;pointer-events:none;z-index:0}
+    main{position:relative;z-index:1;width:min(1000px,100% - 40px);padding:40px 0 190px;text-align:center}
+    .logo{height:84px;width:auto;max-width:100%}
+    .logo-fb{font:700 44px 'Fredoka',sans-serif;color:var(--blue);line-height:1}.logo-fb span{display:block;font-size:30px;color:var(--pink)}
+    h1{font:600 clamp(26px,4vw,38px)/1.15 'Fredoka',sans-serif;color:var(--ink);margin:18px 0 6px}
+    .lead{font-size:18px;font-weight:500;margin:0 0 28px}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;text-align:left}
+    .card{display:flex;flex-direction:column;gap:10px;background:var(--blue);color:#fff;text-decoration:none;border-radius:32px;border:3px dashed #fff;outline:5px solid var(--blue);outline-offset:-3px;padding:28px 32px;box-shadow:0 8px 22px rgba(20,55,122,.28);transition:transform .15s,background .15s}
+    .card:hover{background:var(--blue-d);transform:translateY(-3px)}
+    .card.p{background:var(--pink);outline-color:var(--pink)}.card.p:hover{background:#b3125f}
+    .card .tag{align-self:flex-start;background:#fff;color:var(--blue);border-radius:999px;padding:3px 14px;font-weight:700;font-size:13px}
+    .card.p .tag{color:#b3125f}
+    .card h2{font:600 30px/1.1 'Fredoka',sans-serif;margin:0}
+    .card p{margin:0;font-size:16px;line-height:1.4}
+    .card .go{margin-top:8px;align-self:flex-start;background:#fff;color:var(--blue);font-weight:700;border-radius:999px;padding:10px 24px}
+    .card.p .go{color:#b3125f}
+    .note{margin-top:26px;font-size:14px}
+    .note b{background:#fff3b0;border:1px dashed #7a5d00;border-radius:6px;padding:0 6px;color:#4a3800}
+    @media (prefers-reduced-motion:reduce){.card{transition:none}.card:hover{transform:none}}
+  </style>
+</head>
+<body>
+  <svg class="dash" viewBox="0 0 380 380" aria-hidden="true"><circle cx="190" cy="190" r="170" fill="none" stroke="#1f4fa3" stroke-width="5" stroke-dasharray="14 12"/></svg>
+  <svg class="blobs" viewBox="0 0 1920 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g stroke="#fff3cf" stroke-width="5">
+    <ellipse cx="20" cy="190" rx="110" ry="140" fill="#1c4b9b"/><ellipse cx="130" cy="285" rx="400" ry="170" fill="#1ab3dc"/>
+    <ellipse cx="410" cy="310" rx="170" ry="190" fill="#f5b21a"/><ellipse cx="640" cy="315" rx="190" ry="160" fill="#d81b7a"/>
+    <ellipse cx="800" cy="325" rx="140" ry="200" fill="#5aa83c" transform="rotate(12 800 325)"/><ellipse cx="1060" cy="325" rx="200" ry="160" fill="#1c4b9b"/>
+    <ellipse cx="1340" cy="305" rx="210" ry="110" fill="#1ab3dc"/><ellipse cx="1620" cy="315" rx="130" ry="140" fill="#d81b7a"/>
+    <ellipse cx="1850" cy="200" rx="130" ry="110" fill="#f5b21a"/><ellipse cx="1820" cy="295" rx="190" ry="180" fill="#ef6a22"/></g></svg>
+  <main>
+    <img class="logo" src="assets/img/logo-bibliolab-activa.png" alt="Bibliolab Activa" onerror="this.outerHTML='<div class=&quot;logo-fb&quot;>Bibliolab<span>Activa</span></div>'">
+    <h1>Prototipos de Bibliolab Activa</h1>
+    <p class="lead">Elige qué prototipo quieres ver.</p>
+    <div class="cards">
+      <a class="card" href="docente.html">
+        <span class="tag">Plataforma web</span>
+        <h2>Web docente</h2>
+        <p>Crea la actividad, genera el código, sube y consulta las evidencias de los grupos.</p>
+        <span class="go">Abrir web docente</span>
+      </a>
+      <a class="card p" href="punto-fisico.html">
+        <span class="tag">En la biblioteca</span>
+        <h2>Punto físico</h2>
+        <p>Aplicativo del computador de la Bibliolab: código, registro de grupos con tarjeta NFC, temporizador y entrega.</p>
+        <span class="go">Abrir punto físico</span>
+      </a>
+    </div>
+    <p class="note"><b>Prototipos no funcionales</b> · solo simulan la secuencia de pantallas. Códigos de ejemplo: <code>K7Q2M9XP</code> y <code>R4T8W2NB</code>.</p>
+  </main>
+</body>
+</html>
