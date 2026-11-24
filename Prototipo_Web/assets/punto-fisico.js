@@ -79,7 +79,7 @@ const S = {};
 function resetAll() {
   clearInterval(S.iv);
   Object.assign(S, {act:null, grupos:[], started:false, closed:false, ended:false, left:0, iv:null, fails:0, lock:false, flash:0,
-    fotos:[], showIns:false, err:'', demo:{lector:false, camara:false}});
+    fotos:[], showIns:false, err:'', cardErr:null, demo:{lector:false, camara:false}});
 }
 resetAll();
 let demoHidden = false, demoOpen = false;
@@ -266,28 +266,54 @@ function p15() {
   };
 }
 
-/* Lectura de tarjeta (simulada). t: 'nueva' | 'repetida' | 'desconocida' */
+/* Lectura de tarjeta (simulada). t: 'nueva' | 'repetida' | 'desconocida'.
+   Tarjeta repetida o no reconocida -> pantalla P16 (no cambia ningún estado). */
+function errTarjeta(tipo) {
+  tono('err');
+  if (location.hash !== '#/p16') S.cardErr = {tipo, back:location.hash || '#/p15'};
+  else S.cardErr.tipo = tipo;
+  location.hash = '#/p16'; if (location.hash === '#/p16') route();
+}
 function leer(t) {
   if (S.demo.lector) { aviso('No pudimos leer la tarjeta. Usa el registro manual.', 'err', ['Ir al registro manual', '#/p17']); tono('err'); return; }
   if (!S.act) return;
   if (S.closed) { aviso('La sesión ya está cerrada. Esta lectura no cambia nada.', 'warn'); tono('err'); return; }
+  if (t === 'desconocida') return errTarjeta('desconocida');
   if (!S.started) {
     if (t === 'repetida') {
       if (!S.grupos.length) { aviso('Todavía no hay grupos registrados.', 'warn'); return; }
-      aviso('Este grupo ya está registrado.', 'warn'); tono('err'); return;      // P16 · no cambia estados
+      return errTarjeta('repetida');
     }
     if (S.grupos.length >= 6) { aviso('Máximo de grupos de este prototipo: 6.', 'warn'); return; }
     S.grupos.push({n:S.grupos.length + 1, estado:'Activo'}); S.flash = S.grupos.length;
     aviso(`Grupo ${S.grupos.length} registrado · Estado: Activo`, 'ok'); tono('ok'); route(); return;
   }
-  if (t === 'desconocida') { aviso('Tarjeta no registrada en la sesión.', 'err'); tono('err'); return; }   // P16 · no cambia estados
   if (t === 'repetida') {
     if (!fins()) { aviso('Todavía ningún grupo está Finalizado.', 'warn'); return; }
-    aviso('Este grupo ya está Finalizado.', 'warn'); tono('err'); return;
+    return errTarjeta('repetida');
   }
   const g = S.grupos.find(x => x.estado === 'Activo');
   if (!g) { aviso('Todos los grupos ya están Finalizados.', 'warn'); return; }
   g.estado = 'Finalizado'; aviso(`Grupo ${g.n} · Estado: Finalizado`, 'ok'); tono('ok'); route();
+}
+
+/* ================= P16 · Tarjeta NFC repetida o no reconocida ================= */
+function p16() {
+  if (!S.act) { location.hash = '#/p12'; return; }
+  const e = S.cardErr || {tipo:'desconocida', back:S.started ? '#/p18' : '#/p15'}, rep = e.tipo === 'repetida';
+  const back = e.back === '#/p16' ? (S.started ? '#/p18' : '#/p15') : e.back;
+  const titulo = rep ? 'Esta tarjeta ya está registrada' : 'Tarjeta no reconocida';
+  const texto = rep
+    ? (S.started ? 'Ese grupo ya está Finalizado. No hace falta volver a acercar la tarjeta.' : 'Ese grupo ya hizo su registro y sigue en estado Activo. No hace falta volver a acercar la tarjeta.')
+    : (S.started ? 'Esta tarjeta no está registrada en esta sesión. Acerca la tarjeta de tu grupo o pide al docente el registro manual.' : 'El lector no reconoce esta tarjeta. Prueba con la tarjeta de tu grupo o pide al docente el registro manual.');
+  shell(`<main class="scr"><section class="pnl pink" style="min-height:440px" role="alert">
+    <span class="ic-big">${ic(rep ? 'check' : 'info')}</span>
+    <h1>${titulo}</h1><p>${texto}</p>
+    <p class="note"><strong>No se cambió ningún estado.</strong> ${rep ? '' : 'Si es la tarjeta de tu grupo, avisa al docente.'}</p>
+    ${S.started ? `<p>${clk()}</p>` : ''}
+    <div class="row-c" style="margin-top:10px"><a class="btn btn-light btn-big" href="${back}">Volver</a><a class="btn btn-ghost-w" href="#/p17">Registro manual</a></div>
+    <p class="note" style="margin-top:8px">Volverás automáticamente en unos segundos.</p></section></main>`);
+  S.timer = setTimeout(() => { if (location.hash === '#/p16') location.hash = back; }, 10000);
 }
 
 /* ================= P17 · Registro manual ================= */
@@ -428,7 +454,7 @@ function p22() {
 }
 
 /* ================= Router ================= */
-const R = {p12, p13, p14a, p14, p15, p17, p18, p19, p20, p20b, p21, p22};
+const R = {p12, p13, p14a, p14, p15, p16, p17, p18, p19, p20, p20b, p21, p22};
 function route() {
   clearTimeout(S.timer); closeModal(true);
   const k = (location.hash.replace(/^#\/?/, '') || 'p12').toLowerCase();
@@ -452,7 +478,7 @@ function renderDemo() {
     <div>Tarjeta: <button id="d-n">Nueva / lectura</button><button id="d-r">Ya registrada</button><button id="d-u">No reconocida</button></div>
     <div><button id="d-fin">Terminar tiempo</button><button id="d-lock">Bloquear ingreso</button><button id="d-reset">Reiniciar demo</button></div>
     <hr><div>Cargar directo: <button data-c="K7Q2M9XP">K7Q2M9XP</button><button data-c="R4T8W2NB">R4T8W2NB</button></div>
-    <div>Ir a: ${['p12','p13','p14a','p14','p15','p17','p18','p19','p20','p20b','p21','p22'].map(p => `<button data-go="${p}">${p.toUpperCase()}</button>`).join('')}</div>
+    <div>Ir a: ${['p12','p13','p14a','p14','p15','p16','p17','p18','p19','p20','p20b','p21','p22'].map(p => `<button data-go="${p}">${p.toUpperCase()}</button>`).join('')}</div>
     <hr><div><button id="d-json">Descargar archivo de actividad de ejemplo (.json)</button></div>
     <div style="margin-top:6px">Códigos: <code>K7Q2M9XP</code> y <code>R4T8W2NB</code> (Programada), <code>X9L3P5CD</code> (Inactiva)</div>
     <hr><button id="d-h">Ocultar panel (Shift+D lo vuelve a mostrar)</button></div>` : ''}`;
